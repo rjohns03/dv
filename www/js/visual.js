@@ -230,7 +230,7 @@ function onMouseOver(event) {
     var node = drillDown(drill_path);
     tooltip.innerHTML = scanned_dir.split("/").slice(0, -1).join("/") + node_path;
     if(mtime_on) {
-        tooltip.innerHTML += " - " + formatDate(node.mtime);
+        tooltip.innerHTML += " - modified " + moment(node.mtime, "X").fromNow();
     }
 
     updateExplanation(event.target);
@@ -509,7 +509,7 @@ function parseJson(response) {
     mtime_on = json["mtime_on"];
 
     d3.select("#directory_name").text(scanned_dir);
-    d3.select("#timestamp").text("Created: " + formatDate(json["scan_time"], true));
+    d3.select("#timestamp").text("Created " + moment(json["scan_time"], "X").fromNow());
     document.title = "dv - " + scanned_dir;
     tree_depth = json["tree_depth"];
     start_root = "/root/" + Object.keys(json.root.children)[0];
