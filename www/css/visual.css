@@ -58,6 +58,13 @@
     z-index: 1000;
 }
 
+#timestamp {
+    position: absolute;
+    font-size: 1.1em;
+    top: 14px;
+    left: 10px;
+}
+
 #gear-icon {
     cursor: pointer;
     bottom: 0px;

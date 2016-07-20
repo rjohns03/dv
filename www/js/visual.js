@@ -2,6 +2,7 @@
 
 var start_root = "/root"
 var scanned_dir;
+var mtime_on;
 var prettyCount = d3.format(".3s");
 
 var width;
@@ -187,6 +188,19 @@ function updateBreadcrumbs(path_parts) {
     }
 }
 
+function formatDate(unix_timestamp, keep_time) {
+    var date = new Date(0);
+    date.setUTCSeconds(unix_timestamp);
+
+    var date_string;
+    if(keep_time) {
+        date_string = date.toString().split(" ").slice(0, -2).join(" ");
+    } else {
+        date_string = date.getMonth() + "/" + date.getDate() + "/" + date.getFullYear();
+    }
+    return date_string;
+}
+
 function onClick(event) {
     var path = tooltip.innerHTML;
     if(path && tooltip.style.visibility == "visible") {
@@ -212,7 +226,12 @@ function onMouseOver(event) {
     }
 
     tooltip.style.visibility = "visible";
+    var drill_path = "/root" + node_path;
+    var node = drillDown(drill_path);
     tooltip.innerHTML = scanned_dir.split("/").slice(0, -1).join("/") + node_path;
+    if(mtime_on) {
+        tooltip.innerHTML += " - " + formatDate(node.mtime);
+    }
 
     updateExplanation(event.target);
     updateBreadcrumbs(path_parts);
@@ -486,8 +505,11 @@ function parseJson(response) {
         json = response;
     }
 
-    scanned_dir = json["scanned_dir"]
+    scanned_dir = json["scanned_dir"];
+    mtime_on = json["mtime_on"];
+
     d3.select("#directory_name").text(scanned_dir);
+    d3.select("#timestamp").text("Created: " + formatDate(json["scan_time"], true));
     document.title = "dv - " + scanned_dir;
     tree_depth = json["tree_depth"];
     start_root = "/root/" + Object.keys(json.root.children)[0];

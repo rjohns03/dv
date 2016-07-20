@@ -20,6 +20,7 @@ def parseArgs():
     parser.add_argument("--processes", "-p", nargs="?", type=int, default=5, help="Number of processes to scan with (defaults to 5)")
     parser.add_argument("--depth", "-d", nargs="?", type=int, default=10, help="Depth of directory tree to show in browser (defaults to 10)")
     parser.add_argument("-u", "--unique", action="store_true", help="If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan")
+    parser.add_argument("-m", "--modtime", action="store_true", help="If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot")
     args = parser.parse_args()
     args.root = args.directory
 
@@ -58,6 +59,7 @@ def scanDir(in_queue, out_queue):
     while 1:
         total_bytes = 0
         total_files = 0
+        newest_time = 0
         try:
             path = in_queue.get(False)
         except Exception:
@@ -76,13 +78,17 @@ def scanDir(in_queue, out_queue):
             try:
                 if item.is_dir(follow_symlinks=False):
                     continue
-                item_size = item.stat(follow_symlinks=False).st_size
+                stat_result = item.stat(follow_symlinks=False)
+                item_size = stat_result.st_size
+                if stat_result.st_mtime > newest_time:
+                    newest_time = int(stat_result.st_mtime)
+
                 total_bytes += item_size
                 total_files += 1
             except (FileNotFoundError, PermissionError):
                 pass
 
-        out_queue.put([path, total_bytes, total_files])
+        out_queue.put([path, total_bytes, total_files, newest_time])
 
 
 def scaffoldDir(path, scaffold, depth=1):
@@ -90,7 +96,11 @@ def scaffoldDir(path, scaffold, depth=1):
         collection_vars["tree_depth"] = depth
 
     base_path = os.path.basename(path)
+
     new_node = {"name": base_path, "size": 0, "count": 0, "children": {}}
+    if(args.modtime):
+        new_node["mtime"] = 0
+
     scaffold["children"][base_path] = new_node
 
     try:
@@ -133,6 +143,9 @@ def joinNode(node):
         current = current[part]
         current["size"] += node[1]
         current["count"] += node[2]
+        if args.modtime and node[3] > current["mtime"]:
+            current["mtime"] = node[3]
+
         current = current["children"]
 
 
@@ -169,7 +182,7 @@ if __name__ == "__main__":
         new_proc.start()
 
     collection_vars = {"tree_depth": 0}
-    scaffold = {"root": {"name": "root", "size": 0, "count": 0, "children": {}}}
+    scaffold = {"root": {"name": "root", "size": 0, "mtime": 0, "count": 0, "children": {}}}
     scaffoldDir(args.root, scaffold["root"])
 
     for proc in range(args.processes):
@@ -194,6 +207,8 @@ if __name__ == "__main__":
     scaffold["tree_depth"] = collection_vars["tree_depth"]
     scaffold["max_depth"] = args.depth
     scaffold["scanned_dir"] = args.root
+    scaffold["scan_time"] = int(time.time())
+    scaffold["mtime_on"] = args.modtime
 
     file_json = json.dumps(scaffold)
     token = getToken()
