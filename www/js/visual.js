@@ -3,6 +3,7 @@
 var start_root = "/root"
 var scanned_dir;
 var mtime_on;
+var volume_bytes;
 var prettyCount = d3.format(".3s");
 
 var width;
@@ -18,6 +19,7 @@ $(window).resize(buildVisual);
 var r_hue;
 var value_type;
 var dark_theme;
+var fs_percent;
 loadSettings();
 applyTheme();
 
@@ -75,8 +77,8 @@ function prettySize(byte_count) {
     }
 }
 
-function getPercentString(value) {
-    var percentage = (100 * value / total_value).toPrecision(3);
+function getPercentString(value, total) {
+    var percentage = (100 * value / total).toPrecision(3);
     var percentage_string = percentage + "%";
     if (percentage < 0.1) {
         percentage_string = "< 0.1%";
@@ -102,7 +104,13 @@ function updateExplanation(node) {
     else if(value_type == "count") {
         shown_value = prettyCount(shown_value);
     }
-    var percentage_string = getPercentString(value);
+    var percentage_string = getPercentString(value, total_value);
+
+    // Update FS percentage
+    var fs_percent_string = getPercentString(value, volume_bytes);
+
+    d3.select("#volume-percent")
+        .text("(" + fs_percent_string + " of volume)");
 
     d3.select("#value")
         .text(shown_value);
@@ -292,13 +300,26 @@ function loadSettings() {
     r_hue = Number(localStorage.getItem("r_hue")) || Math.random();
     dark_theme = JSON.parse(localStorage.getItem("dark_theme")) || false;
     value_type = localStorage.getItem("value_type") || "size";
+    fs_percent = JSON.parse(localStorage.getItem("fs_percent")) || false;
 
     document.getElementById("dark-theme").checked = dark_theme;
 
     document.getElementById("hue-slider").value = r_hue * 255;
 
+    document.getElementById("show-fs").checked = fs_percent;
+
     d3.select("#" + value_type + "radio")
         .attr("checked", "checked");
+    setFsVisibility(fs_percent);
+}
+
+function setFsVisibility(visible) {
+    var percent_text = d3.select("#volume-percent");
+    if(visible) {
+        percent_text.style("visibility", "visible");
+    } else {
+        percent_text.style("visibility", "hidden");
+    }
 }
 
 function gearClick() {
@@ -338,6 +359,13 @@ function applyTheme() {
         d3.selectAll("#circle path").style("stroke-width", "1px");
         d3.selectAll("#circle path").style("stroke", "white");
     }
+}
+
+function fsClick() {
+    fs_percent = !fs_percent;
+    localStorage.setItem("fs_percent", fs_percent);
+
+    setFsVisibility(fs_percent);
 }
 
 function darkThemeClick() {
@@ -507,6 +535,7 @@ function parseJson(response) {
 
     scanned_dir = json["scanned_dir"];
     mtime_on = json["mtime_on"];
+    volume_bytes = json["fs_total_bytes"];
 
     d3.select("#directory_name").text(scanned_dir);
     d3.select("#timestamp").text("Created " + moment(json["scan_time"], "X").fromNow());

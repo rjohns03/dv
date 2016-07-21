@@ -1,10 +1,10 @@
 @keyframes settings_show {
     from {transform: translate(0px, 0px);}
-    to {transform: translate(-125px, 140px);}
+    to {transform: translate(-125px, 160px);}
 }
 
 @keyframes settings_hide {
-    from {transform: translate(-125px, 140px);}
+    from {transform: translate(-125px, 160px);}
     to {transform: translate(0px, 0px);}
 }
 
@@ -30,13 +30,13 @@
 #settings {
     position: fixed;
     width: 150px;
-    height: 165px;
+    height: 185px;
     background: white;
     border-radius: 0px 0px 0px 24px;
     padding: 10px;
     box-shadow: 0px 0px 8px lightgrey;
     right: -125px;
-    top: -140px;
+    top: -160px;
     z-index: 1;
     -webkit-animation-fill-mode:forwards;
     -moz-animation-fill-mode:forwards;
@@ -129,6 +129,11 @@
 
 #hue-slider:focus {
     outline: none;
+}
+
+#volume-percent {
+    margin-top: 0.4em;
+    visibility: hidden;
 }
 
 input#hue-slider::-ms-thumb {

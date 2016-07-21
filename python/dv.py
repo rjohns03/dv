@@ -210,6 +210,10 @@ if __name__ == "__main__":
     scaffold["scan_time"] = int(time.time())
     scaffold["mtime_on"] = args.modtime
 
+    fs_stat = os.statvfs(args.root)
+    fs_bytes = fs_stat.f_bsize * fs_stat.f_blocks
+    scaffold["fs_total_bytes"] = fs_bytes
+
     file_json = json.dumps(scaffold)
     token = getToken()
     writeFile(token, file_json)

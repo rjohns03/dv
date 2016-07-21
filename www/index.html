@@ -30,6 +30,8 @@
       <input type="radio" id="countradio" name="viewtype" onchange="radioChange();"> Count<br>
       <hr>
       <input type="checkbox" id="dark-theme" onchange="darkThemeClick();"> Dark Theme<br>
+      <hr>
+      <input type="checkbox" id="show-fs" onchange="fsClick();"> Show Volume Usage<br>
       <img src="https://engineering.arm.gov/~dohnalek/dv/img/gear.svg" onclick="gearClick(); return false;" style="visibility: hidden;" id="gear-icon"/>
     </div>
   </div>
@@ -42,6 +44,7 @@
   <div id="explanation" style="visibility: hidden;">
       <span id="value"></span><br/>
       <span id="percentage"></span> of <span id="value_type"></span> stored in this directory
+      <p id="volume-percent">(X% of volume)</p>
   </div>
   <div id="loading">
     <img src="img/path1.png" style="animation-duration: 0.6s;" />
