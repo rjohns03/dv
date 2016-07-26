@@ -21,6 +21,7 @@ def parseArgs():
     parser.add_argument("--depth", "-d", nargs="?", type=int, default=10, help="Depth of directory tree to show in browser (defaults to 10)")
     parser.add_argument("-u", "--unique", action="store_true", help="If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan")
     parser.add_argument("-m", "--modtime", action="store_true", help="If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot")
+    parser.add_argument("-f", "--fade", action="store_true", help="If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time")
     args = parser.parse_args()
     args.root = args.directory
 
@@ -28,6 +29,9 @@ def parseArgs():
         args.root = args.root[:-1]
     if not os.path.exists(args.root):
         sys.exit("{} does not exist".format(args.root))
+
+    if args.fade:
+        args.modtime = True
 
     return args
 
@@ -144,6 +148,10 @@ def joinNode(node):
         current["size"] += node[1]
         current["count"] += node[2]
         if args.modtime and node[3] > current["mtime"]:
+            if node[3] > collection_vars["newest_dir"]:
+                collection_vars["newest_dir"] = node[3]
+            if node[3] < collection_vars["oldest_dir"]:
+                collection_vars["oldest_dir"] = node[3]
             current["mtime"] = node[3]
 
         current = current["children"]
@@ -181,7 +189,7 @@ if __name__ == "__main__":
         processes.append(new_proc)
         new_proc.start()
 
-    collection_vars = {"tree_depth": 0}
+    collection_vars = {"tree_depth": 0, "oldest_dir": time.time(), "newest_dir": 0}
     scaffold = {"root": {"name": "root", "size": 0, "mtime": 0, "count": 0, "children": {}}}
     scaffoldDir(args.root, scaffold["root"])
 
@@ -209,6 +217,10 @@ if __name__ == "__main__":
     scaffold["scanned_dir"] = args.root
     scaffold["scan_time"] = int(time.time())
     scaffold["mtime_on"] = args.modtime
+
+    scaffold["fade_on"] = args.fade
+    scaffold["oldest_dir"] = collection_vars["oldest_dir"]
+    scaffold["newest_dir"] = collection_vars["newest_dir"]
 
     fs_stat = os.statvfs(args.root)
     fs_bytes = fs_stat.f_bsize * fs_stat.f_blocks

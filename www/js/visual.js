@@ -4,6 +4,11 @@ var start_root = "/root"
 var scanned_dir;
 var mtime_on;
 var volume_bytes;
+
+var fade_on;
+var newest_dir;
+var oldest_dir;
+
 var prettyCount = d3.format(".3s");
 
 var width;
@@ -214,7 +219,6 @@ function onClick(event) {
     if(path && tooltip.style.visibility == "visible") {
         var current_path = path.replace(scanned_dir, "");
         start_root = start_root + current_path;
-        console.log(path, current_path, start_root);
         buildVisual();
     }
 }
@@ -248,10 +252,15 @@ function onMouseOver(event) {
 function onMouseLeave(event) {
     tooltip.style.visibility = "hidden";
 
-    d3.selectAll("path")
-        .transition()
-        .duration(500)
-        .style("opacity", 1);
+    var paths = d3.selectAll("path")
+        .each(function(d, i) {
+            var node = drillDown("/root" + this.id);
+
+            d3.select(this)
+                .transition()
+                .duration(500)
+                .style("opacity", getFadeOpacity(node.mtime));
+        });
 
     updateExplanation(false);
     updateBreadcrumbs([])
@@ -447,6 +456,20 @@ function buildVisual() {
     applyTheme();
 }
 
+function getFadeOpacity(node_time) {
+    if(!fade_on) {
+        return 1;
+    }
+    else {
+        var MIN_OPACITY = 0.5;
+        var time_span = newest_dir - oldest_dir;
+        var node_span = newest_dir - node_time;
+
+        var opacity = 1 - (node_span / time_span * 10);
+        return opacity;
+    }
+}
+
 function descendNode(node, parent, depth, path) {
     path += "/" + node.name;
     var node_path = cursor.getPath(node, parent, total_value, depth);
@@ -457,6 +480,7 @@ function descendNode(node, parent, depth, path) {
     svg.append("path")
       .attr("d", node_path)
       .attr("id", path)
+      .attr("opacity", getFadeOpacity(node.mtime))
       .attr("value", node[value_type])
       .style("position", "relative")
       .style("fill", getColor(node.name))
@@ -536,6 +560,10 @@ function parseJson(response) {
     scanned_dir = json["scanned_dir"];
     mtime_on = json["mtime_on"];
     volume_bytes = json["fs_total_bytes"];
+
+    fade_on = json["fade_on"];
+    newest_dir = json["newest_dir"];
+    oldest_dir = json["oldest_dir"];
 
     d3.select("#directory_name").text(scanned_dir);
     d3.select("#timestamp").text("Created " + moment(json["scan_time"], "X").fromNow());
