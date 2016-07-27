@@ -5,6 +5,7 @@
 <link rel="stylesheet" type="text/css"
   href="https://fonts.googleapis.com/css?family=Open+Sans:400,600">
 <link rel="stylesheet" type="text/css" href="css/visual.css"/>
+<link rel="stylesheet" type="text/css" href="css/inputs.css"/>
 
 <title>dv - Loading</title>
 
@@ -23,8 +24,12 @@
   <div id="settings" style="visibility: hidden;">
     <div id="inputs">
       Hue
-      <input type="range" min="0" max="255" id="hue-slider">
-      <br>
+      <input type="range" min="0" max="255" id="hue-slider"><br>
+      <hr>
+      <span>Upper Limit</span>
+      <input type="range" min="1" max="60" id="min-date-slider" class="date-slider">
+      <input type="range" min="1" max="60" id="max-date-slider" class="date-slider">
+      <span>Lower Limit</span>
       <hr>
       <input type="radio" id="sizeradio" name="viewtype" onchange="radioChange();"> Size<br>
       <input type="radio" id="countradio" name="viewtype" onchange="radioChange();"> Count<br>

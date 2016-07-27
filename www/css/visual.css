@@ -1,10 +1,10 @@
 @keyframes settings_show {
     from {transform: translate(0px, 0px);}
-    to {transform: translate(-125px, 160px);}
+    to {transform: translate(-125px, 235px);}
 }
 
 @keyframes settings_hide {
-    from {transform: translate(-125px, 160px);}
+    from {transform: translate(-125px, 235px);}
     to {transform: translate(0px, 0px);}
 }
 
@@ -30,13 +30,13 @@
 #settings {
     position: fixed;
     width: 150px;
-    height: 185px;
+    height: 260px;
     background: white;
     border-radius: 0px 0px 0px 24px;
     padding: 10px;
     box-shadow: 0px 0px 8px lightgrey;
     right: -125px;
-    top: -160px;
+    top: -235px;
     z-index: 1;
     -webkit-animation-fill-mode:forwards;
     -moz-animation-fill-mode:forwards;
@@ -121,62 +121,6 @@
     padding-top: 5px;
     height: 105px;
     width: 100%;
-}
-
-#hue-slider {
-    -webkit-appearance: none;
-}
-
-#hue-slider:focus {
-    outline: none;
-}
-
-#volume-percent {
-    margin-top: 0.4em;
-    visibility: hidden;
-}
-
-input#hue-slider::-ms-thumb {
-    width: 9px;
-    height: 9px;
-    transform: none;
-    background: black;
-    border: 0;
-}
-
-input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
-    background: white;
-    border: solid 1px grey;
-}
-
-#hue-slider::-webkit-slider-runnable-track {
-    height: 8px;
-    background: -webkit-linear-gradient(left, hsl(0,100%,50%),hsl(60,100%, 50%), hsl(120,100%, 50%),hsl(180, 100%, 50%), hsl(240,100%,50%),hsl(300,100%,50%),hsl(0,100%,50%));
-}
-
-#hue-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 8px;
-    height: 20px;
-    transform: translate(0, -6px);
-    background-image: linear-gradient(180deg, white, rgb(230,230,230));
-    border: solid 1px darkgrey;
-    cursor: pointer;
-}
-
-#hue-slider::-moz-range-track {
-    height: 8px;
-    background: -moz-linear-gradient(left, hsl(0,100%,50%),hsl(60,100%, 50%), hsl(120,100%, 50%),hsl(180, 100%, 50%), hsl(240,100%,50%),hsl(300,100%,50%),hsl(0,100%,50%));
-}
-
-#hue-slider::-moz-range-thumb {
-    -webkit-appearance: none;
-    width: 8px;
-    height: 20px;
-    background-image: -moz-linear-gradient(top, white, rgb(230,230,230));
-    border: solid 1px darkgrey;
-    border-radius: 0px;
-    cursor: pointer;
 }
 
 #circle path {
