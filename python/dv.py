@@ -5,11 +5,30 @@ import sys
 import json
 import time
 import gzip
+import shutil
 import string
 import random
 import hashlib
 import argparse
+from http.server import *
 from multiprocessing import Manager, Process
+
+
+DV_LOCATION = os.path.dirname(os.path.realpath(__file__))
+WWW_LOCATION = os.path.join(os.path.dirname(DV_LOCATION), "www")
+
+
+class Server(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.gzip_headers()
+        SimpleHTTPRequestHandler.end_headers(self)
+
+    def gzip_headers(self):
+        if self.path == "/scan.json":
+            self.send_header("Content-Encoding", "gzip")
+
+    def log_message(self, format, *args):
+        return
 
 
 def parseArgs():
@@ -22,9 +41,19 @@ def parseArgs():
     parser.add_argument("-u", "--unique", action="store_true", help="If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan")
     parser.add_argument("-m", "--modtime", action="store_true", help="If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot")
     parser.add_argument("-f", "--fade", action="store_true", help="If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time")
+    parser.add_argument("-s", "--save", help="A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes")
+    parser.add_argument("-sh", "--save-and-host", help="The same as -s, but after scanning, dv will start a server to serve the newly generated plot")
+
     args = parser.parse_args()
     args.root = args.directory
 
+    if args.save_and_host:
+        args.save = args.save_and_host
+    if args.save:
+        args.save = os.path.realpath(args.save)
+
+    if args.root == "/":
+        args.root = "/./"
     if args.root.endswith("/"):
         args.root = args.root[:-1]
     if not os.path.exists(args.root):
@@ -157,19 +186,35 @@ def joinNode(node):
         current = current["children"]
 
 
-def writeFile(run_id, data):
-    file_root = "/data/tmp/dv"
-    if not os.path.exists(file_root):
-        os.makedirs(file_root)
-    write_path = os.path.join(file_root, "dv_{}.json".format(run_id))
+def writeFile(run_id, data, file_root="/data/tmp/dv"):
+    if args.save:
+        file_name = "scan.json"
+    else:
+        file_name = "dv_{}.json".format(run_id)
+
+    write_path = os.path.join(file_root, file_name)
 
     fi = gzip.open(write_path, "wb")
     fi.write(bytes(data, encoding="utf-8"))
     fi.close()
 
 
+def writeOutDir(run_id, data):
+    dir_path = os.path.join(args.save, "dv_" + run_id)
+
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+
+    shutil.copytree(WWW_LOCATION, dir_path)
+
+    writeFile(run_id, data, dir_path)
+
+
 if __name__ == "__main__":
     args = parseArgs()
+
+    if args.save and not os.path.exists(WWW_LOCATION):
+        sys.exit("Web dir '{}' not found".format(WWW_LOCATION))
 
     if args.unique:
         getToken = getRandomToken
@@ -187,6 +232,7 @@ if __name__ == "__main__":
     for proc in range(args.processes):
         new_proc = Process(target=scanDir, args=(work_queue, done_queue, ))
         processes.append(new_proc)
+        new_proc.daemon = True
         new_proc.start()
 
     collection_vars = {"tree_depth": 0, "oldest_dir": time.time(), "newest_dir": 0}
@@ -212,6 +258,7 @@ if __name__ == "__main__":
     for proc in processes:
         proc.join(timeout=0.5)
 
+    # Embed custom variables into JSON to save time
     scaffold["tree_depth"] = collection_vars["tree_depth"]
     scaffold["max_depth"] = args.depth
     scaffold["scanned_dir"] = args.root
@@ -223,12 +270,26 @@ if __name__ == "__main__":
     scaffold["newest_dir"] = collection_vars["newest_dir"]
 
     fs_stat = os.statvfs(args.root)
-    fs_bytes = fs_stat.f_bsize * fs_stat.f_blocks
+    fs_bytes = fs_stat.f_frsize * fs_stat.f_blocks
     scaffold["fs_total_bytes"] = fs_bytes
 
     file_json = json.dumps(scaffold)
     token = getToken()
-    writeFile(token, file_json)
+
+    if args.save:
+        writeOutDir(token, file_json)
+    else:
+        writeFile(token, file_json)
 
     print("Your plot can be found at:")
-    print("https://engineering.arm.gov/dv?id=%s" % token)
+    if args.save_and_host:
+        dir_path = os.path.join(args.save, "dv_" + token)
+        print("localhost:8000?id=local")
+        os.chdir(dir_path)
+        server = HTTPServer(("localhost", 8000), Server)
+        server.serve_forever()
+    elif args.save:
+        dir_path = os.path.join(args.save, "dv_" + token)
+        print(dir_path)
+    else:
+        print("https://engineering.arm.gov/dv?id=%s" % token)
