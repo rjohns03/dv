@@ -14,6 +14,10 @@ from http.server import *
 from multiprocessing import Manager, Process
 
 
+DV_LOCATION = os.path.dirname(os.path.realpath(__file__))
+WWW_LOCATION = os.path.join(os.path.dirname(DV_LOCATION), "www")
+
+
 class Server(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.gzip_headers()
@@ -37,10 +41,16 @@ def parseArgs():
     parser.add_argument("-u", "--unique", action="store_true", help="If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan")
     parser.add_argument("-m", "--modtime", action="store_true", help="If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot")
     parser.add_argument("-f", "--fade", action="store_true", help="If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time")
-    parser.add_argument("-o", "--output", help="A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes, a local HTTP server will start and serve the plot")
+    parser.add_argument("-s", "--save", help="A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes")
+    parser.add_argument("-sh", "--save-and-host", help="The same as -s, but after scanning, dv will start a server to serve the newly generated plot")
 
     args = parser.parse_args()
     args.root = args.directory
+
+    if args.save_and_host:
+        args.save = args.save_and_host
+    if args.save:
+        args.save = os.path.realpath(args.save)
 
     if args.root == "/":
         args.root = "/./"
@@ -53,27 +63,6 @@ def parseArgs():
         args.modtime = True
 
     return args
-
-
-def parseConfig():
-    """Parse the file config.json found in the same directory
-    """
-    if not args.output:
-        return {}
-
-    config_name = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
-
-    try:
-        config_contents = open(config_name).read()
-    except Exception:
-        sys.exit("Couldn't find config file")
-
-    try:
-        config_json = json.loads(config_contents)
-    except Exception:
-        sys.exit("Malformed JSON in config file")
-
-    return config_json
 
 
 def getRandomToken():
@@ -198,7 +187,7 @@ def joinNode(node):
 
 
 def writeFile(run_id, data, file_root="/data/tmp/dv"):
-    if args.output:
+    if args.save:
         file_name = "scan.json"
     else:
         file_name = "dv_{}.json".format(run_id)
@@ -211,22 +200,21 @@ def writeFile(run_id, data, file_root="/data/tmp/dv"):
 
 
 def writeOutDir(run_id, data):
-    dir_path = os.path.join(args.output, "dv_" + run_id)
+    dir_path = os.path.join(args.save, "dv_" + run_id)
 
     if os.path.exists(dir_path):
         shutil.rmtree(dir_path)
 
-    shutil.copytree(config["web_dir"], dir_path)
+    shutil.copytree(WWW_LOCATION, dir_path)
 
     writeFile(run_id, data, dir_path)
 
 
 if __name__ == "__main__":
     args = parseArgs()
-    config = parseConfig()
 
-    if args.output and not os.path.exists(config["web_dir"]):
-        sys.exit("Web dir '{}' not found".format(config.web_dir))
+    if args.save and not os.path.exists(WWW_LOCATION):
+        sys.exit("Web dir '{}' not found".format(WWW_LOCATION))
 
     if args.unique:
         getToken = getRandomToken
@@ -244,6 +232,7 @@ if __name__ == "__main__":
     for proc in range(args.processes):
         new_proc = Process(target=scanDir, args=(work_queue, done_queue, ))
         processes.append(new_proc)
+        new_proc.daemon = True
         new_proc.start()
 
     collection_vars = {"tree_depth": 0, "oldest_dir": time.time(), "newest_dir": 0}
@@ -287,17 +276,20 @@ if __name__ == "__main__":
     file_json = json.dumps(scaffold)
     token = getToken()
 
-    if args.output:
+    if args.save:
         writeOutDir(token, file_json)
     else:
         writeFile(token, file_json)
 
     print("Your plot can be found at:")
-    if args.output:
-        dir_path = os.path.join(args.output, "dv_" + token)
+    if args.save_and_host:
+        dir_path = os.path.join(args.save, "dv_" + token)
         print("localhost:8000?id=local")
         os.chdir(dir_path)
         server = HTTPServer(("localhost", 8000), Server)
         server.serve_forever()
+    elif args.save:
+        dir_path = os.path.join(args.save, "dv_" + token)
+        print(dir_path)
     else:
         print("https://engineering.arm.gov/dv?id=%s" % token)
