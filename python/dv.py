@@ -42,6 +42,8 @@ def parseArgs():
     args = parser.parse_args()
     args.root = args.directory
 
+    if args.root == "/":
+        args.root = "/./"
     if args.root.endswith("/"):
         args.root = args.root[:-1]
     if not os.path.exists(args.root):
@@ -56,6 +58,9 @@ def parseArgs():
 def parseConfig():
     """Parse the file config.json found in the same directory
     """
+    if not args.output:
+        return {}
+
     config_name = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json")
 
     try:
@@ -220,6 +225,9 @@ if __name__ == "__main__":
     args = parseArgs()
     config = parseConfig()
 
+    if args.output and not os.path.exists(config["web_dir"]):
+        sys.exit("Web dir '{}' not found".format(config.web_dir))
+
     if args.unique:
         getToken = getRandomToken
     else:
@@ -273,7 +281,7 @@ if __name__ == "__main__":
     scaffold["newest_dir"] = collection_vars["newest_dir"]
 
     fs_stat = os.statvfs(args.root)
-    fs_bytes = fs_stat.f_bsize * fs_stat.f_blocks
+    fs_bytes = fs_stat.f_frsize * fs_stat.f_blocks
     scaffold["fs_total_bytes"] = fs_bytes
 
     file_json = json.dumps(scaffold)
