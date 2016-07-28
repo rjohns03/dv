@@ -10,8 +10,8 @@ import string
 import random
 import hashlib
 import argparse
-from http.server import *
 from multiprocessing import Manager, Process
+from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 
 DV_LOCATION = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +27,7 @@ class Server(SimpleHTTPRequestHandler):
         if self.path == "/scan.json":
             self.send_header("Content-Encoding", "gzip")
 
-    def log_message(self, format, *args):
+    def log_message(self, format_string, *log_args):
         return
 
 
@@ -72,7 +72,7 @@ def getRandomToken():
     LENGTH = 10
     ID = ""
     rand_gen = random.SystemRandom()
-    for x in range(LENGTH):
+    for _ in range(LENGTH):
         new_char = rand_gen.choice(string.ascii_letters + string.digits)
         ID += new_char
     return ID
@@ -210,6 +210,43 @@ def writeOutDir(run_id, data):
     writeFile(run_id, data, dir_path)
 
 
+def joinNodes():
+    done_procs = 0
+    while 1:
+        try:
+            next_node = done_queue.get(False)
+        except Exception:
+            continue
+        if next_node == "__DONE__":
+            done_procs += 1
+            if done_procs == args.processes:
+                break
+            continue
+        joinNode(next_node)
+
+    for proc in processes:
+        proc.join(timeout=0.5)
+
+
+def setScaffoldMetadata():
+    # Embed custom variables into JSON to save time
+    scaffold["tree_depth"] = collection_vars["tree_depth"]
+    scaffold["max_depth"] = args.depth
+    scaffold["scanned_dir"] = args.root
+    scaffold["scan_time"] = int(time.time())
+    scaffold["mtime_on"] = args.modtime
+
+    scaffold["fade_on"] = args.fade
+    scaffold["oldest_dir"] = collection_vars["oldest_dir"]
+    scaffold["newest_dir"] = collection_vars["newest_dir"]
+
+    fs_stat = os.statvfs(args.root)
+    fs_bytes = fs_stat.f_frsize * fs_stat.f_blocks
+    scaffold["fs_total_bytes"] = fs_bytes
+
+    return scaffold
+
+
 if __name__ == "__main__":
     args = parseArgs()
 
@@ -242,36 +279,8 @@ if __name__ == "__main__":
     for proc in range(args.processes):
         work_queue.put("__DONE__")
 
-    done_procs = 0
-    while 1:
-        try:
-            next_node = done_queue.get(False)
-        except Exception:
-            continue
-        if next_node == "__DONE__":
-            done_procs += 1
-            if done_procs == args.processes:
-                break
-            continue
-        joinNode(next_node)
-
-    for proc in processes:
-        proc.join(timeout=0.5)
-
-    # Embed custom variables into JSON to save time
-    scaffold["tree_depth"] = collection_vars["tree_depth"]
-    scaffold["max_depth"] = args.depth
-    scaffold["scanned_dir"] = args.root
-    scaffold["scan_time"] = int(time.time())
-    scaffold["mtime_on"] = args.modtime
-
-    scaffold["fade_on"] = args.fade
-    scaffold["oldest_dir"] = collection_vars["oldest_dir"]
-    scaffold["newest_dir"] = collection_vars["newest_dir"]
-
-    fs_stat = os.statvfs(args.root)
-    fs_bytes = fs_stat.f_frsize * fs_stat.f_blocks
-    scaffold["fs_total_bytes"] = fs_bytes
+    joinNodes()
+    setScaffoldMetadata()
 
     file_json = json.dumps(scaffold)
     token = getToken()

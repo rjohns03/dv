@@ -3,15 +3,6 @@
     visibility: hidden;
 }
 
-#hue-slider, .date-slider {
-    -webkit-appearance: none;
-    background: transparent;
-    width: 90%;
-}
-#hue-slider:focus, .date-slider:focus{
-    outline: none;
-}
-
 input#hue-slider::-ms-thumb {
     width: 9px;
     height: 9px;
@@ -56,25 +47,53 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
     cursor: pointer;
 }
 
+#hue-slider, .date-slider {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: transparent;
+    width: 90%;
+}
+#hue-slider:focus, .date-slider:focus{
+    outline: none;
+}
+
 .date-slider {
     display: block;
     margin: 0px 2px;
+    height: 4px;
+    padding: 0;
 }
 
-#min-date-slider { margin-top: 8px; }
-#min-date-slider::-webkit-slider-thumb { transform: translateY(-7px); border-bottom: 0; }
-#max-date-slider { margin-bottom: 8px; }
-#max-date-slider::-webkit-slider-thumb { transform: translateY(-4px) scaleY(-1); border-top: 0; }
+#max-date-slider { margin-top: 8px; }
+#max-date-slider::-webkit-slider-thumb { transform: translateY(-7px); border-bottom: 0; }
+#max-date-slider::-moz-range-thumb { transform: translateY(-2px); border-bottom: 0; }
+#min-date-slider { margin-bottom: 8px; }
+#min-date-slider::-webkit-slider-thumb { transform: translateY(-4px) scaleY(-1); border-top: 0; }
+#min-date-slider::-moz-range-thumb { transform: translateY(1px) scaleY(-1); border-top: 0; }
+
 
 .date-slider::-webkit-slider-runnable-track {
     height: 4px;
-    background-image: -webkit-linear-gradient(left, transparent 4px, grey 4px, grey calc(100% - 4px), transparent calc(100% - 4px));
+    background: linear-gradient(90deg, transparent 4px, grey 4px, grey calc(100% - 4px), transparent calc(100% - 4px));
 }
 .date-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 8px;
     height: 15px;
-    background-image: url("../img/range_arrow.png");
+    background: url("../img/range_arrow.png");
+    border: 0;
+    border-radius: 0px;
+    cursor: pointer;
+}
+
+.date-slider::-moz-range-track {
+    height: 4px;
+    background: linear-gradient(90deg, transparent 4px, grey 4px, grey calc(100% - 4px), transparent calc(100% - 4px));
+}
+.date-slider::-moz-range-thumb {
+    width: 8px;
+    height: 15px;
+    background: url("../img/range_arrow.png");
     border: 0;
     border-radius: 0px;
     cursor: pointer;
