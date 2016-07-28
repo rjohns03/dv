@@ -61,10 +61,10 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
     margin: 0px 2px;
 }
 
-#min-date-slider { margin-top: 8px; }
-#min-date-slider::-webkit-slider-thumb { transform: translateY(-7px); border-bottom: 0; }
-#max-date-slider { margin-bottom: 8px; }
-#max-date-slider::-webkit-slider-thumb { transform: translateY(-4px) scaleY(-1); border-top: 0; }
+#max-date-slider { margin-top: 8px; }
+#max-date-slider::-webkit-slider-thumb { transform: translateY(-7px); border-bottom: 0; }
+#min-date-slider { margin-bottom: 8px; }
+#min-date-slider::-webkit-slider-thumb { transform: translateY(-4px) scaleY(-1); border-top: 0; }
 
 .date-slider::-webkit-slider-runnable-track {
     height: 4px;
