@@ -19,14 +19,17 @@ input#hue-slider::-ms-thumb {
     background: black;
     border: 0;
 }
+
 input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
     background: white;
     border: solid 1px grey;
 }
+
 #hue-slider::-webkit-slider-runnable-track {
     height: 8px;
     background: -webkit-linear-gradient(left, transparent 4px, hsl(0,100%,50%) 4px ,hsl(60,100%, 50%), hsl(120,100%, 50%), hsl(180, 100%, 50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(0,100%,50%) calc(100% - 4px), transparent calc(100% - 4px));
 }
+
 #hue-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 8px;
@@ -57,6 +60,7 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
     display: block;
     margin: 0px 2px;
 }
+
 #min-date-slider { margin-top: 8px; }
 #min-date-slider::-webkit-slider-thumb { transform: translateY(-7px); border-bottom: 0; }
 #max-date-slider { margin-bottom: 8px; }

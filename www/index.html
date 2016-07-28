@@ -26,10 +26,12 @@
       Hue
       <input type="range" min="0" max="255" id="hue-slider"><br>
       <hr>
-      <span>Upper Limit</span>
-      <input type="range" min="1" max="60" id="min-date-slider" class="date-slider">
-      <input type="range" min="1" max="60" id="max-date-slider" class="date-slider">
-      <span>Lower Limit</span>
+      <div id="date-sliders">
+        <span id="min-date-limit">Upper Limit</span>
+        <input type="range" min="1" id="min-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
+        <input type="range" min="1" id="max-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
+        <span id="max-date-limit">Lower Limit</span>
+      </div>
       <hr>
       <input type="radio" id="sizeradio" name="viewtype" onchange="radioChange();"> Size<br>
       <input type="radio" id="countradio" name="viewtype" onchange="radioChange();"> Count<br>
