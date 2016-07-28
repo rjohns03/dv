@@ -27,10 +27,10 @@
       <input type="range" min="0" max="255" id="hue-slider"><br>
       <hr>
       <div id="date-sliders">
-        <span id="min-date-limit">Upper Limit</span>
-        <input type="range" min="1" id="max-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
-        <input type="range" min="1" id="min-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
-        <span id="max-date-limit">Lower Limit</span>
+        <span id="max-date-limit">Upper Limit</span>
+        <input type="range" min="0" id="max-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
+        <input type="range" min="0" id="min-date-slider" oninput="onDateSlide(this);" class="date-slider"/>
+        <span id="min-date-limit">Lower Limit</span>
       </div>
       <hr>
       <input type="radio" id="sizeradio" name="viewtype" onchange="radioChange();"> Size<br>

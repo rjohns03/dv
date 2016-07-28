@@ -1,6 +1,8 @@
 "use strict";
 
-var start_root = "/root"
+var current_time = moment() / 1000;
+
+var start_root = "/root";
 var scanned_dir;
 var mtime_on;
 var volume_bytes;
@@ -28,6 +30,13 @@ var fs_percent;
 loadSettings();
 applyTheme();
 
+// Get slider objects
+var min_slider = document.getElementById("min-date-slider");
+var max_slider = document.getElementById("max-date-slider");
+var min_date_text = document.getElementById("min-date-limit");
+var max_date_text = document.getElementById("max-date-limit");
+var slider_time_unit;
+
 var settings_shown = false;
 var moved_down = false;
 var total_value = 0;
@@ -35,6 +44,16 @@ var tree_depth = 0;
 var json;
 
 var colors = {};
+
+var time_units = {
+    "seconds": 1,
+    "minutes": 60,
+    "hours": 3600,
+    "days": 3600 * 24,
+    "weeks": 3600 * 24 * 7,
+    "months": 3600 * 24 * 30,
+    "years": 3600 * 24 * 7 * 52
+};
 
 // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
 var b = {
@@ -355,6 +374,7 @@ function applyTheme() {
         d3.select("#settings").style("background-color", "darkgrey");
         d3.select("body").style("background-color", "black");
         d3.select("#explanation").style("color", "lightgrey");
+        d3.select("#timestamp").style("color", "white");
         d3.selectAll("#circle path").style("stroke-width", "0.5");
         d3.selectAll("#circle path").style("stroke", "black");
     }
@@ -365,6 +385,7 @@ function applyTheme() {
         d3.select("#settings").style("background-color", "white");
         d3.select("body").style("background-color", "white");
         d3.select("#explanation").style("color", "#666");
+        d3.select("#timestamp").style("color", "black");
         d3.selectAll("#circle path").style("stroke-width", "1px");
         d3.selectAll("#circle path").style("stroke", "white");
     }
@@ -381,6 +402,30 @@ function darkThemeClick() {
     dark_theme = !dark_theme;
     localStorage.setItem("dark_theme", dark_theme);
     applyTheme();
+}
+
+function onDateSlide(slider) {
+    if(slider.id == "max-date-slider" && Number(min_slider.value) > Number(max_slider.value)) {
+        min_slider.value = max_slider.value;
+    }
+    else if(slider.id == "min-date-slider" && Number(min_slider.value) > Number(max_slider.value)) {
+        max_slider.value = min_slider.value;
+    }
+    updateDateSliderText();
+    d3.selectAll("path")
+        .each(function(d, i) {
+            var node = drillDown("/root" + this.id);
+
+            d3.select(this)
+                .transition()
+                .duration(500)
+                .style("opacity", getFadeOpacity(node.mtime));
+        });
+}
+
+function updateDateSliderText() {
+    max_date_text.innerHTML = "Upper Limit: " + max_slider.value + " " + slider_time_unit + " old";
+    min_date_text.innerHTML = "Lower Limit: " + min_slider.value + " " + slider_time_unit + " old";
 }
 
 function hueChange(new_hue) {
@@ -457,15 +502,25 @@ function buildVisual() {
 }
 
 function getFadeOpacity(node_time) {
+    var slide_upper_seconds = current_time - time_units[slider_time_unit] * Number(max_slider.value);
+    var slide_lower_seconds = current_time - time_units[slider_time_unit] * Number(min_slider.value);
+
     if(!fade_on) {
         return 1;
     }
     else {
         var MIN_OPACITY = 0.5;
-        var time_span = newest_dir - oldest_dir;
+
+        if(node_time < slide_upper_seconds) {
+            return MIN_OPACITY;
+        }
+        else if(node_time > slide_lower_seconds) {
+            return 1;
+        }
+        var time_span = slide_lower_seconds - slide_upper_seconds;
         var node_span = newest_dir - node_time;
 
-        var opacity = 1 - (node_span / time_span * 10);
+        var opacity = 1 - (node_span / time_span);
         return opacity;
     }
 }
@@ -545,6 +600,37 @@ else {
     d3.text(json_url, parseJson);
 }
 
+function setupDateSliders() {
+    if(!fade_on) {
+        d3.selectAll("[class=date-slider]").attr("disabled", "true");
+        d3.select("#date-sliders").style("opacity", "0.5");
+    }
+    else {
+        var min_slider = d3.select("#min-date-slider");
+        var max_slider = d3.select("#max-date-slider");
+
+        var time_info = getTimeUnit(newest_dir - oldest_dir).split(" ");
+        var time_value = Math.ceil(time_info[0]).toString();
+        slider_time_unit = time_info[1];
+
+        min_slider.attr("max", time_value);
+        max_slider.attr("max", time_value);
+
+        min_slider[0][0].value = "0";
+        max_slider[0][0].value = time_value.toString();
+        updateDateSliderText();
+    }
+}
+
+function getTimeUnit(seconds) {
+    for(var unit in time_units) {
+        var time_span = seconds / time_units[unit];
+        if((time_span > 10 && time_span < 100) || unit == "years") {
+            return time_span + " " + unit;
+        }
+    }
+}
+
 function parseJson(response) {
     // Register event handlers
     window.onmouseover = onMouseOver;
@@ -565,9 +651,11 @@ function parseJson(response) {
     mtime_on = json["mtime_on"];
     volume_bytes = json["fs_total_bytes"];
 
-    fade_on = json["fade_on"];
     newest_dir = json["newest_dir"];
     oldest_dir = json["oldest_dir"];
+
+    fade_on = json["fade_on"];
+    setupDateSliders();
 
     d3.select("#directory_name").text(scanned_dir);
     d3.select("#timestamp").text("Created " + moment(json["scan_time"], "X").fromNow());
