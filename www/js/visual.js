@@ -51,8 +51,7 @@ var time_units = {
     "hours": 3600,
     "days": 3600 * 24,
     "weeks": 3600 * 24 * 7,
-    "months": 3600 * 24 * 30,
-    "years": 3600 * 24 * 7 * 52
+    "months": 3600 * 24 * 30
 };
 
 // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
@@ -330,6 +329,10 @@ function loadSettings() {
     value_type = localStorage.getItem("value_type") || "size";
     fs_percent = JSON.parse(localStorage.getItem("fs_percent")) || false;
 
+    if(value_type == "count") {
+        d3.select("volume-percent").style("visibility", "hidden");
+    }
+
     document.getElementById("dark-theme").checked = dark_theme;
 
     document.getElementById("hue-slider").value = r_hue * 255;
@@ -343,7 +346,7 @@ function loadSettings() {
 
 function setFsVisibility(visible) {
     var percent_text = d3.select("#volume-percent");
-    if(visible) {
+    if(visible && value_type == "size") {
         percent_text.style("visibility", "visible");
     } else {
         percent_text.style("visibility", "hidden");
@@ -438,6 +441,7 @@ function hueChange(new_hue) {
         paths[i].style.fill = getColor(color_name);
     }
     updateBreadcrumbs([]);
+    d3.selectAll(".date-slider").style("--main-color", getColor("slider"));
 
     localStorage.setItem("r_hue", r_hue);
 }
@@ -480,6 +484,8 @@ function buildVisual() {
     setSizes();
 
     clearGraph();
+
+    d3.selectAll(".date-slider").style("--main-color", getColor("slider"));
 
     var root_node = drillDown(start_root);
     total_value = root_node[value_type];
@@ -625,7 +631,7 @@ function setupDateSliders() {
 function getTimeUnit(seconds) {
     for(var unit in time_units) {
         var time_span = seconds / time_units[unit];
-        if((time_span > 10 && time_span < 100) || unit == "years") {
+        if((time_span > 10 && time_span < 100) || unit == "months") {
             return time_span + " " + unit;
         }
     }
