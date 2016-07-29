@@ -62,6 +62,7 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
     margin: 0px 2px;
     height: 4px;
     padding: 0;
+    --main-color: #BFBFBF;
 }
 
 #max-date-slider { margin-top: 8px; }
@@ -74,7 +75,7 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
 
 .date-slider::-webkit-slider-runnable-track {
     height: 4px;
-    background: linear-gradient(90deg, transparent 4px, grey 4px, grey calc(100% - 4px), transparent calc(100% - 4px));
+    background: linear-gradient(90deg, transparent 4px, var(--main-color) 4px, #BFBFBF 75%, #BFBFBF calc(100% - 4px), transparent calc(100% - 4px));
 }
 .date-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -88,7 +89,7 @@ input#hue-slider::-ms-fill-upper, input#hue-slider::-ms-fill-lower {
 
 .date-slider::-moz-range-track {
     height: 4px;
-    background: linear-gradient(90deg, transparent 4px, grey 4px, grey calc(100% - 4px), transparent calc(100% - 4px));
+    background: linear-gradient(90deg, transparent 4px, var(--main-color) 4px, #BFBFBF 75%, #BFBFBF calc(100% - 4px), transparent calc(100% - 4px));
 }
 .date-slider::-moz-range-thumb {
     width: 8px;

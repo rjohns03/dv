@@ -157,7 +157,7 @@
     opacity: 0;
 }
 
-#mc_secret:checked ~ span {
+#mc_secret:checked ~ #tooltip {
     background-color: rgba(0, 0, 0, 0.85);
     border-radius: 0;
     color: white;
@@ -173,7 +173,7 @@
     text-shadow: 1px 1px rgb(90, 90, 90);
 }
 
-#mc_secret:checked ~ span:before {
+#mc_secret:checked ~ #tooltip:before {
     border: 2px solid black;
     border-left-style: none;
     border-right-style: none;
@@ -185,7 +185,7 @@
     position: absolute;
 }
 
-#mc_secret:checked ~ span:after {
+#mc_secret:checked ~ #tooltip:after {
     border: 2px solid black;
     border-top-style: none;
     border-bottom-style: none;
