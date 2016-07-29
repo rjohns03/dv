@@ -441,7 +441,7 @@ function hueChange(new_hue) {
         paths[i].style.fill = getColor(color_name);
     }
     updateBreadcrumbs([]);
-    d3.selectAll(".date-slider").style("--main-color", getColor("slider"));
+    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 100%, 50%)");
 
     localStorage.setItem("r_hue", r_hue);
 }
@@ -489,7 +489,7 @@ function buildVisual() {
 
     clearGraph();
 
-    d3.selectAll(".date-slider").style("--main-color", getColor("slider"));
+    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 100%, 50%)");
 
     var root_node = drillDown(start_root);
     total_value = root_node[value_type];
