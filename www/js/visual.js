@@ -330,7 +330,7 @@ function loadSettings() {
     fs_percent = JSON.parse(localStorage.getItem("fs_percent")) || false;
 
     if(value_type == "count") {
-        d3.select("volume-percent").style("visibility", "hidden");
+        d3.select("#volume-percent").style("visibility", "hidden");
     }
 
     document.getElementById("dark-theme").checked = dark_theme;
@@ -449,9 +449,13 @@ function hueChange(new_hue) {
 function radioChange() {
     if(value_type == "size") {
         value_type = "count";
+        d3.select("#volume-percent").style("visibility", "hidden");
     }
     else if(value_type == "count") {
         value_type = "size";
+        if(fs_percent) {
+            d3.select("#volume-percent").style("visibility", "visible");
+        }
     }
     localStorage.setItem("value_type", value_type);
 
