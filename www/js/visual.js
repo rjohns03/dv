@@ -61,8 +61,6 @@ var b = {
 
 var tooltip = document.getElementById("tooltip");
 
-//document.addEventListener("click", onClick);
-
 var hue_slider = document.getElementById("hue-slider");
 hue_slider.onchange = hueChange;
 
@@ -70,13 +68,15 @@ var loading_layer = document.getElementById("loading");
 loading_layer.addEventListener("transitionend", loading_layer.remove, false);
 
 
-function getColor(name) {
+function getColor(name, sat_ratio) {
     var color;
     if(colors[name] == undefined) {
-        var hue_range = -6 * Math.sin((r_hue - 0.3) * 2 * Math.PI) + 14;
-        var sv_range = -2 * (Math.pow(2 * (r_hue-0.15), 6) - 0.0000001)/(Math.pow(2 * (r_hue-0.15), 6) + 0.0000001) + 5;
-        var hsv = tinycolor.fromRatio({ h: (Math.random() / hue_range - (0.5 / hue_range) + r_hue) % 1.0, s: (0.45) + Math.random() / sv_range - (1/2/sv_range), l: (1/2) + Math.random() / (sv_range + 2) - (2/3/sv_range)});
-        color = "#" + hsv.toHex();
+        var hue_funct = -6 * Math.sin((r_hue - 0.3) * 2 * Math.PI) + 14;
+        var sv_funct = -2 * (Math.pow(2 * (r_hue-0.15), 6) - 0.0000001)/(Math.pow(2 * (r_hue-0.15), 6) + 0.0000001) + 5;
+        var hue = ((Math.random() / hue_funct - (0.5 / hue_funct) + r_hue) % 1.0) * 360;
+        var sat = 50.0 * sat_ratio;
+        var bright = ((0.5 + Math.random() / (sv_funct + 2) - (2/3/sv_funct))) * 100;
+        color = "hsl(" + Math.floor(hue) + ", " + Math.floor(sat) + "%, " + Math.floor(bright) + "%)";
         colors[name] = color;
     } else {
         color = colors[name];
@@ -202,7 +202,8 @@ function updateBreadcrumbs(path_parts) {
 
         trail.append("svg:polygon")
             .attr("points", points)
-            .style("fill", getColor(path_parts[i]));
+            .attr("fill", getColor(path_parts[i], 1))
+            .style("transition", "fill 1s");
 
         var text_x = b.xo + (b.w + b.t) / 2 + path_parts[i].length*2.5;
 
@@ -277,7 +278,7 @@ function onMouseLeave(event) {
             d3.select(this)
                 .transition()
                 .duration(500)
-                .style("opacity", getFadeOpacity(node.mtime));
+                .style("opacity", 1);
         });
 
     updateExplanation(false);
@@ -335,7 +336,7 @@ function loadSettings() {
 
     document.getElementById("dark-theme").checked = dark_theme;
 
-    document.getElementById("hue-slider").value = r_hue * 255;
+    document.getElementById("hue-slider").value = r_hue * 360;
 
     document.getElementById("show-fs").checked = fs_percent;
 
@@ -419,10 +420,10 @@ function onDateSlide(slider) {
         .each(function(d, i) {
             var node = drillDown("/root" + this.id);
 
+            var current_color = this.getAttribute("fill").split(",");
+            var fade = getFadeLevel(node.mtime);
             d3.select(this)
-                .transition()
-                .duration(500)
-                .style("opacity", getFadeOpacity(node.mtime));
+                .attr("fill", current_color[0] + ", " + Math.floor(50.0 * fade) + "%, " + current_color[2]);
         });
 }
 
@@ -432,16 +433,23 @@ function updateDateSliderText() {
 }
 
 function hueChange(new_hue) {
-    r_hue = new_hue.target.valueAsNumber / 255;
+    r_hue = new_hue.target.valueAsNumber / 360;
     colors = {}
 
     var paths = d3.selectAll("path")[0];
     for(var i = 0; i < paths.length; i++) {
         var color_name = paths[i].id.split("/").slice(-1)[0];
-        paths[i].style.fill = getColor(color_name);
+
+        var current_sat = paths[i].getAttribute("fill").split(",")[1].slice(1,-1) / 50;
+        paths[i].setAttribute("fill", getColor(color_name, current_sat));
     }
-    updateBreadcrumbs([]);
-    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 100%, 50%)");
+    var crumbs = d3.selectAll("polygon")[0];
+    var crumb_texts = d3.selectAll("polygon + text")[0];
+    for(var i = 0; i < crumbs.length; i++) {
+        var color_name = crumb_texts[i].innerHTML;
+        crumbs[i].setAttribute("fill", getColor(color_name, 1));
+    }
+    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 60%, 50%)");
 
     localStorage.setItem("r_hue", r_hue);
 }
@@ -489,12 +497,11 @@ function buildVisual() {
 
     clearGraph();
 
-    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 100%, 50%)");
+    d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 60%, 50%)");
 
     var root_node = drillDown(start_root);
     total_value = root_node[value_type];
 
-    //var root = json.root.children[root_dir]
     var path = "";
     descendNode(root_node, {"progression": 0}, 1, path)
     updateExplanation(false);
@@ -511,7 +518,7 @@ function buildVisual() {
     applyTheme();
 }
 
-function getFadeOpacity(node_time) {
+function getFadeLevel(node_time) {
     var slide_upper_seconds = current_time - time_units[slider_time_unit] * Number(max_slider.value);
     var slide_lower_seconds = current_time - time_units[slider_time_unit] * Number(min_slider.value);
 
@@ -519,10 +526,10 @@ function getFadeOpacity(node_time) {
         return 1;
     }
     else {
-        var MIN_OPACITY = 0.5;
+        var MIN_FADE = 0;
 
         if(node_time < slide_upper_seconds) {
-            return MIN_OPACITY;
+            return MIN_FADE;
         }
         else if(node_time > slide_lower_seconds) {
             return 1;
@@ -530,8 +537,8 @@ function getFadeOpacity(node_time) {
         var time_span = slide_lower_seconds - slide_upper_seconds;
         var node_span = newest_dir - node_time;
 
-        var opacity = 1 - (node_span / time_span);
-        return opacity;
+        var fade = 1 - (node_span / time_span);
+        return fade;
     }
 }
 
@@ -545,10 +552,9 @@ function descendNode(node, parent, depth, path) {
     svg.append("path")
       .attr("d", node_path)
       .attr("id", path)
-      .attr("opacity", getFadeOpacity(node.mtime))
       .attr("value", node[value_type])
+      .attr("fill", getColor(node.name, getFadeLevel(node.mtime)))
       .style("position", "relative")
-      .style("fill", getColor(node.name))
       .style("stroke", "white")
       .style("stroke-width", "1px");
 
