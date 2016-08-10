@@ -202,7 +202,7 @@ function updateBreadcrumbs(path_parts) {
 
         trail.append("svg:polygon")
             .attr("points", points)
-            .attr("fill", getColor(path_parts[i], 1)) //also here
+            .attr("fill", getColor(path_parts[i], 1))
             .style("transition", "fill 1s");
 
         var text_x = b.xo + (b.w + b.t) / 2 + path_parts[i].length*2.5;
@@ -280,7 +280,7 @@ function onMouseLeave(event) {
                 .duration(500)
                 .style("opacity", 1);
         });
-    
+
     updateExplanation(false);
     updateBreadcrumbs([])
 }
@@ -419,8 +419,9 @@ function onDateSlide(slider) {
     d3.selectAll("path")
         .each(function(d, i) {
             var node = drillDown("/root" + this.id);
+
             var current_color = this.getAttribute("fill").split(",");
-            var fade = getFadeOpacity(node.mtime);
+            var fade = getFadeLevel(node.mtime);
             d3.select(this)
                 .attr("fill", current_color[0] + ", " + Math.floor(50.0 * fade) + "%, " + current_color[2]);
         });
@@ -440,13 +441,13 @@ function hueChange(new_hue) {
         var color_name = paths[i].id.split("/").slice(-1)[0];
 
         var current_sat = paths[i].getAttribute("fill").split(",")[1].slice(1,-1) / 50;
-        paths[i].setAttribute("fill", getColor(color_name, current_sat));//also here
+        paths[i].setAttribute("fill", getColor(color_name, current_sat));
     }
     var crumbs = d3.selectAll("polygon")[0];
     var crumb_texts = d3.selectAll("polygon + text")[0];
     for(var i = 0; i < crumbs.length; i++) {
         var color_name = crumb_texts[i].innerHTML;
-        crumbs[i].setAttribute("fill", getColor(color_name, 1));//also here
+        crumbs[i].setAttribute("fill", getColor(color_name, 1));
     }
     d3.selectAll(".date-slider").style("--main-color", "hsl(" + (r_hue * 360) + ", 60%, 50%)");
 
@@ -517,7 +518,7 @@ function buildVisual() {
     applyTheme();
 }
 
-function getFadeOpacity(node_time) {
+function getFadeLevel(node_time) {
     var slide_upper_seconds = current_time - time_units[slider_time_unit] * Number(max_slider.value);
     var slide_lower_seconds = current_time - time_units[slider_time_unit] * Number(min_slider.value);
 
@@ -525,10 +526,10 @@ function getFadeOpacity(node_time) {
         return 1;
     }
     else {
-        var MIN_OPACITY = 0;
+        var MIN_FADE = 0;
 
         if(node_time < slide_upper_seconds) {
-            return MIN_OPACITY;
+            return MIN_FADE;
         }
         else if(node_time > slide_lower_seconds) {
             return 1;
@@ -536,8 +537,8 @@ function getFadeOpacity(node_time) {
         var time_span = slide_lower_seconds - slide_upper_seconds;
         var node_span = newest_dir - node_time;
 
-        var opacity = 1 - (node_span / time_span);
-        return opacity;
+        var fade = 1 - (node_span / time_span);
+        return fade;
     }
 }
 
@@ -552,7 +553,7 @@ function descendNode(node, parent, depth, path) {
       .attr("d", node_path)
       .attr("id", path)
       .attr("value", node[value_type])
-      .attr("fill", getColor(node.name, getFadeOpacity(node.mtime)))//also here
+      .attr("fill", getColor(node.name, getFadeLevel(node.mtime)))
       .style("position", "relative")
       .style("stroke", "white")
       .style("stroke-width", "1px");
