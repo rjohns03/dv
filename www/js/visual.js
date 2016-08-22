@@ -2,10 +2,11 @@
 
 var current_time = moment() / 1000;
 
-var start_root = "/root";
+var start_root;
 var scanned_dir;
 var mtime_on;
 var volume_bytes;
+var sep;
 
 var fade_on;
 var newest_dir;
@@ -194,7 +195,7 @@ function updateBreadcrumbs(path_parts) {
         }
     }
 
-    var path_parts = json["scanned_dir"].split("/").slice(1).concat(path_parts.slice(1));
+    var path_parts = json["scanned_dir"].split(sep).slice(1).concat(path_parts.slice(1));
     // Add new breadcrumbs
     moved_down = false;
     for(var i = 0; i < path_parts.length; i++) {
@@ -244,22 +245,22 @@ function onClick(event) {
 
 function onMouseOver(event) {
     var node_path = event.target.getAttribute("id");
-    if(!node_path || node_path[0] != "/") {
+    if(!node_path || node_path[0] != sep) {
         return;
     }
-    var path_parts = node_path.split("/").slice(1);
+    var path_parts = node_path.split(sep).slice(1);
     d3.selectAll("path").style("opacity", 0.3);
 
     // Find parent elements by IDs and make them solid
     for(var i = 0; i < path_parts.length; i++) {
-        var current_path = "/" + path_parts.slice(0, i + 1).join("/");
+        var current_path = sep + path_parts.slice(0, i + 1).join(sep);
         document.getElementById(current_path).style.opacity = 1;
     }
 
     tooltip.style.visibility = "visible";
-    var drill_path = "/root" + node_path;
+    var drill_path = sep + "root" + node_path;
     var node = drillDown(drill_path);
-    tooltip.innerHTML = scanned_dir.split("/").slice(0, -1).join("/") + node_path;
+    tooltip.innerHTML = json["drive_letter"] + scanned_dir.split(sep).slice(0, -1).join(sep) + node_path;
     if(mtime_on) {
         tooltip.innerHTML += " - modified " + moment(node.mtime, "X").fromNow();
     }
@@ -273,7 +274,7 @@ function onMouseLeave(event) {
 
     var paths = d3.selectAll("path")
         .each(function(d, i) {
-            var node = drillDown("/root" + this.id);
+            var node = drillDown(sep + "root" + this.id);
 
             d3.select(this)
                 .transition()
@@ -418,7 +419,7 @@ function onDateSlide(slider) {
     updateDateSliderText();
     d3.selectAll("path")
         .each(function(d, i) {
-            var node = drillDown("/root" + this.id);
+            var node = drillDown(sep + "root" + this.id);
 
             var current_color = this.getAttribute("fill").split(",");
             var fade = getFadeLevel(node.mtime);
@@ -438,7 +439,7 @@ function hueChange(new_hue) {
 
     var paths = d3.selectAll("path")[0];
     for(var i = 0; i < paths.length; i++) {
-        var color_name = paths[i].id.split("/").slice(-1)[0];
+        var color_name = paths[i].id.split(sep).slice(-1)[0];
 
         var current_sat = paths[i].getAttribute("fill").split(",")[1].slice(1,-1) / 50;
         paths[i].setAttribute("fill", getColor(color_name, current_sat));
@@ -543,7 +544,7 @@ function getFadeLevel(node_time) {
 }
 
 function descendNode(node, parent, depth, path) {
-    path += "/" + node.name;
+    path += sep + node.name;
     var node_path = cursor.getPath(node, parent, total_value, depth);
     if(node_path == undefined) {
         return;
@@ -571,7 +572,7 @@ function descendNode(node, parent, depth, path) {
 }
 
 function drillDown(path) {
-    var path_parts = path.split("/").slice(1)
+    var path_parts = path.split(sep).slice(1);
     var current = json;
     for(var i = 0; i < path_parts.length; i++) {
         current = current[path_parts[i]];
@@ -663,6 +664,7 @@ function parseJson(response) {
         json = response;
     }
 
+    sep = json["path_sep"];
     scanned_dir = json["scanned_dir"];
     mtime_on = json["mtime_on"];
     volume_bytes = json["fs_total_bytes"];
@@ -673,11 +675,11 @@ function parseJson(response) {
     fade_on = json["fade_on"];
     setupDateSliders();
 
-    d3.select("#directory_name").text(scanned_dir);
+    d3.select("#directory_name").text(json["drive_letter"] + scanned_dir);
     d3.select("#timestamp").text("Created " + moment(json["scan_time"], "X").fromNow());
     document.title = "dv - " + scanned_dir;
     tree_depth = json["tree_depth"];
-    start_root = "/root/" + Object.keys(json.root.children)[0];
+    start_root = sep + "root" + sep + Object.keys(json.root.children)[0];
 
     d3.select("#loading")
         .style("transition", "1.2s")
