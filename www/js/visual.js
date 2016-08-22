@@ -474,7 +474,7 @@ function radioChange() {
 function setSizes() {
     width = $(window).width();
     height = $(window).height();
-    svg_size = Math.min(width, height) * 0.8;
+    svg_size = Math.min(width, height - 160) * 0.8;
 
     // Create SVG circle container
     svg = d3.select("#circle")
