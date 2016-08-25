@@ -11,7 +11,7 @@ import string
 import random
 import hashlib
 import argparse
-from multiprocessing import Manager, Process
+import multiprocessing
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 
@@ -44,6 +44,7 @@ def parseArgs():
     parser.add_argument("-f", "--fade", action="store_true", help="If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time")
     parser.add_argument("-s", "--save", help="A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes")
     parser.add_argument("-sh", "--save-and-host", help="The same as -s, but after scanning, dv will start a server to serve the newly generated plot")
+    parser.add_argument("--multiprocessing-fork", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
     args.root = args.directory
@@ -264,6 +265,7 @@ def setScaffoldMetadata():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     args = parseArgs()
 
     if args.save and not os.path.exists(WWW_LOCATION):
@@ -274,7 +276,7 @@ if __name__ == "__main__":
     else:
         getToken = getRootBasedToken
 
-    manager = Manager()
+    manager = multiprocessing.Manager()
     work_queue = manager.Queue()
     done_queue = manager.Queue()
 
@@ -283,7 +285,7 @@ if __name__ == "__main__":
 
     processes = []
     for proc in range(args.processes):
-        new_proc = Process(target=scanDir, args=(work_queue, done_queue, args.drive_letter, ))
+        new_proc = multiprocessing.Process(target=scanDir, args=(work_queue, done_queue, args.drive_letter, ))
         processes.append(new_proc)
         new_proc.daemon = True
         new_proc.start()
