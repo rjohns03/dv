@@ -18,7 +18,13 @@ dv has several options that can be explored with
 ```bash
 dv --help
 ```
-To get started as quickly as possible with a basic directory scan and plot, clone this repository, cd to the `python` directory, and run:
+To get started as quickly as possible with a basic directory scan and plot, download this repository, cd to the `python` directory, and run:
+
 ```bash
 python3 dv.py <directory-to-scan> --save-and-host <directory-to-store-plot>
+```
+
+If on windows, head over to the "release" section and get the latest windows build. Place it alongside dv.py and run:
+```bash
+dv.exe <directory-to-scan> --save-and-host <directory-to-store-plot>
 ```
