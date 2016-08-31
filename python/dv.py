@@ -32,18 +32,40 @@ class Server(SimpleHTTPRequestHandler):
         return
 
 
+class DotDict(dict):
+    """DotDict wraps the default dictionary to provide dot operator access
+    (dict.foo instead of dict["foo"])
+    """
+    def __getattr__(self, attr):
+        return self.get(attr)
+    __setattr__ = dict.__setitem__
+
+
 def parseArgs():
     """parseArgs will parse sys.argv to create a mapping of args that can be accessed via the dot operator
     """
+
+    HELP = DotDict({
+        "processes": "Number of processes to scan with (defaults to 5)",
+        "depth": "Depth of directory tree to show in browser (defaults to 10)",
+        "unique": "If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan",
+        "modtime": "If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot",
+        "fade": "If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time",
+        "save": "A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes",
+        "save_and_host": "The same as -s, but after scanning, dv will start a server to serve the newly generated plot",
+        "port": "If using --save-and-host, specifies the port of the dv webserver. Defaults to 8000"
+    })
+
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=str, help="Directory for dv to scan")
-    parser.add_argument("--processes", "-p", nargs="?", type=int, default=5, help="Number of processes to scan with (defaults to 5)")
-    parser.add_argument("--depth", "-d", nargs="?", type=int, default=10, help="Depth of directory tree to show in browser (defaults to 10)")
-    parser.add_argument("-u", "--unique", action="store_true", help="If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan")
-    parser.add_argument("-m", "--modtime", action="store_true", help="If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot")
-    parser.add_argument("-f", "--fade", action="store_true", help="If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time")
-    parser.add_argument("-s", "--save", help="A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes")
-    parser.add_argument("-sh", "--save-and-host", help="The same as -s, but after scanning, dv will start a server to serve the newly generated plot")
+    parser.add_argument("--processes", "-p", nargs="?", type=int, default=5, help=HELP.processes)
+    parser.add_argument("--depth", "-d", nargs="?", type=int, default=10, help=HELP.depth)
+    parser.add_argument("-u", "--unique", action="store_true", help=HELP.unique)
+    parser.add_argument("-m", "--modtime", action="store_true", help=HELP.modtime)
+    parser.add_argument("-f", "--fade", action="store_true", help=HELP.fade)
+    parser.add_argument("-s", "--save", help=HELP.save)
+    parser.add_argument("-sh", "--save-and-host", help=HELP.save_and_host)
+    parser.add_argument("--port", default=8000, type=int, help=HELP.port)
     parser.add_argument("--multiprocessing-fork", help=argparse.SUPPRESS)
 
     args = parser.parse_args()
@@ -311,10 +333,14 @@ if __name__ == "__main__":
     print("Your plot can be found at:")
     if args.save_and_host:
         dir_path = os.path.join(args.save, "dv_" + token)
-        print("localhost:8000?id=local")
+        print("[Ctrl+C to stop]")
+        print("http://localhost:{}?id=local".format(args.port))
         os.chdir(dir_path)
-        server = HTTPServer(("localhost", 8000), Server)
-        server.serve_forever()
+        server = HTTPServer(("localhost", args.port), Server)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            sys.exit("\nStopped")
     elif args.save:
         dir_path = os.path.join(args.save, "dv_" + token)
         print(dir_path)
