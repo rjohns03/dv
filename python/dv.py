@@ -85,6 +85,9 @@ def parseArgs():
 
     if args.root == os.path.sep:
         args.root = "{0}.{0}".format(os.path.sep)
+    else:
+        args.root = os.path.abspath(args.root)
+
     if args.root.endswith(os.path.sep):
         args.root = args.root[:-1]
 
