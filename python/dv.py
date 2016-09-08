@@ -5,6 +5,7 @@ import re
 import sys
 import json
 import time
+import math
 import gzip
 import shutil
 import string
@@ -289,6 +290,28 @@ def setScaffoldMetadata():
     return scaffold
 
 
+def pruneData():
+    total_size = scaffold["root"]["size"]
+    total_count = scaffold["root"]["count"]
+
+    pruneNode(scaffold["root"], total_size, total_count)
+
+
+def pruneNode(node, total_size, total_count):
+    rm_nodes = []
+
+    for key, child in node["children"].items():
+        size_thickness = math.pi * 2 * (node["size"] / total_size)
+        count_thickness = math.pi * 2 * (node["count"] / total_count)
+        if size_thickness < 0.005 and count_thickness < 0.005:
+            rm_nodes.append(key)
+        else:
+            pruneNode(child, total_size, total_count)
+
+    for rm_node in rm_nodes:
+        del node["children"][rm_node]
+
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     args = parseArgs()
@@ -324,6 +347,8 @@ if __name__ == "__main__":
 
     joinNodes()
     setScaffoldMetadata()
+
+    pruneData()
 
     file_json = json.dumps(scaffold)
     token = getToken()
