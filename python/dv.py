@@ -51,7 +51,7 @@ def parseArgs():
         "depth": "Depth of directory tree to show in browser (defaults to 10)",
         "unique": "If passed, the 'unique' flag generates a new plot with a unique URL instead of overwriting the previous scan",
         "modtime": "If passed, the 'modtime' flag adds the most recent modification time of any file in each directory to the generated plot",
-        "fade": "If passed, the 'fade' flag will make directories in the generated plot appear more opaque if their files haven't been touched for a long time",
+        "fade": "If passed, the 'fade' flag will make directories in the generated plot appear more gray if their files haven't been touched for a long time",
         "save": "A directory containing the generated plot and web page will be placed on disk at the specified location, after the scan finishes",
         "save_and_host": "The same as -s, but after scanning, dv will start a server to serve the newly generated plot",
         "port": "If using --save-and-host, specifies the port of the dv webserver. Defaults to 8000"
